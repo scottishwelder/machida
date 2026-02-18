@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use a::{Affine, NoiseSymbol, Particles};
+use machida::{Affine, NoiseSymbol, Particles};
 
 fn main() {
     let a = Affine {
@@ -16,5 +16,5 @@ fn main() {
 
     let p = Particles::from_interval(r.interval(), 10);
     println!("{:?}", p);
-    println!("{:?}", p.apply(|x|2.0*x));
+    println!("{:?}", p.apply(|x| 2.0 * x));
 }

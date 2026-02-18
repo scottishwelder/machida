@@ -28,10 +28,10 @@ impl Particles {
     }
 }
 
-impl Add for &Particles {
-    type Output = Particles;
+// impl Add for &Particles {
+//     type Output = Particles;
 
-    fn add(self, other: Self) -> Particles {
-        
-    }
-}
+//     fn add(self, other: Self) -> Particles {
+
+//     }
+// }
