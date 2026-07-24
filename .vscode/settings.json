@@ -1,5 +1,11 @@
 {
     "cSpell.words": [
-        "machida"
+        "ciel",
+        "clippy",
+        "machida",
+        "srmfpa"
+    ],
+    "rust-analyzer.cargo.features": [
+        // "simpler_interval_multiplication"
     ]
 }
