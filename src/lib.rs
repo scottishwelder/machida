@@ -1,7 +1,7 @@
 mod affine;
-mod interval;
+pub mod interval;
 mod particles;
-mod uncertain;
+pub mod uncertain;
 
 pub use affine::{Affine, NoiseSymbol};
 pub use interval::Interval;

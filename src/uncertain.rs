@@ -8,7 +8,7 @@ use std::{
 // TODO: Centralize base numeric type?
 type NumberType = f64;
 
-pub trait Uncertain:
+pub(crate) trait Uncertain:
     Sized
     + Debug
     + Display
@@ -29,5 +29,14 @@ pub trait Uncertain:
     + DivAssign
     + DivAssign<NumberType>
     + Neg
+    + ExtraOps
 {
+}
+
+pub trait ExtraOps {
+    type SqrtResult;
+    type ReciprocalResult;
+
+    fn sqrt(self) -> Self::SqrtResult;
+    fn reciprocal(self) -> Self::ReciprocalResult;
 }

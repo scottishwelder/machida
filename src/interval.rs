@@ -1,37 +1,222 @@
+mod error;
+mod ops;
+
 use std::{
     fmt::{Display, Formatter},
-    ops::Add,
+    num::FpCategory::{Infinite, Nan},
 };
 
-type NumberType = f64;
+use crate::uncertain::Uncertain;
 
-#[derive(Debug)]
-pub struct Interval(pub NumberType, pub NumberType);
+pub use error::FromError;
+
+/// The type for the bonds of intervals
+pub type Bound = f64;
+
+/// A zero scalar according to the bound type
+const ZERO: Bound = 0.0;
+
+#[must_use]
+#[derive(Clone, Copy, Debug, PartialEq)]
+/// A real interval, represented by its lower and higher bounds.
+///
+/// Implements [`Add`], [`Sub`], [`Mul`] and [`Div`]; for intervals and scalars.
+///
+/// Also implements [`Neg`] and [some extra operations].
+///
+/// Notable cases:
+///
+/// - [`NaN`] is never a valid bound;
+///   - Operations that take a scalar will panic if given [`NaN`].
+/// - [-∞] and [+∞] are valid bounds;
+/// - But [[+∞], [+∞]] and [[-∞], [-∞]] are not valid intervals;
+///   - Operations that take a scalar will panic if given [+∞] or [-∞].
+/// - [[-∞], [+∞]] is ℝ; and
+/// - For all `a > b`, [a, b] is ∅.
+///
+/// [+∞]: Bound::INFINITY
+/// [-∞]: Bound::NEG_INFINITY
+/// [`NaN`]: Bound::NAN
+/// [`Add`]: std::ops::Add
+/// [`Sub`]: std::ops::Sub
+/// [`Mul`]: std::ops::Mul
+/// [`Div`]: std::ops::Div
+/// [`Neg`]: std::ops::Neg
+/// [some extra operations]: crate::uncertain::ExtraOps
+pub struct Interval(Bound, Bound);
 
 impl Interval {
-    pub fn new(lo: NumberType, hi: NumberType) -> Self {
-        Interval(lo, hi)
+    /// Creates the interval [lo, hi].
+    /// # Panics
+    ///
+    /// Panics if given [[+∞], [+∞]] or [[-∞], [-∞]]; or if [`NaN`] is passed as either bounds.
+    ///
+    /// [`try_from`] returns an error instead.
+    ///
+    /// [`NaN`]: Bound::NAN
+    /// [+∞]: Bound::INFINITY
+    /// [-∞]: Bound::NEG_INFINITY
+    /// [`try_from`]: Self::try_from
+    pub fn new(lo: Bound, hi: Bound) -> Self {
+        match (lo.classify(), hi.classify()) {
+            (Nan, _) | (_, Nan) => {
+                panic!("Interval bounds should never be NaN")
+            }
+            (Infinite, Infinite) if lo.is_sign_positive() == hi.is_sign_positive() => {
+                panic!("[+∞, +∞] and [-∞, -∞] are not valid intervals")
+            }
+            (_, _) => Self(lo, hi),
+        }
     }
 
+    /// Creates the interval [value, value].
+    ///
+    /// # Panics
+    ///
+    /// Panics if given [+∞], [-∞] or [`NaN`].
+    ///
+    /// [`try_from`] returns an error instead.
+    ///
+    /// [`NaN`]: Bound::NAN
+    /// [+∞]: Bound::INFINITY
+    /// [-∞]: Bound::NEG_INFINITY
+    /// [`try_from`]: Self::try_from
+    pub fn new_singleton(value: Bound) -> Self {
+        assert!(
+            value.is_finite(),
+            "Cannot create [+∞, +∞], [-∞, -∞] or [NaN, NaN]"
+        );
+        Self(value, value)
+    }
+
+    /// The only interval that represents ℝ ([[-∞], [+∞]]).
+    ///
+    /// [+∞]: Bound::INFINITY
+    /// [-∞]: Bound::NEG_INFINITY
+    pub const R: Self = Self(Bound::NEG_INFINITY, Bound::INFINITY);
+
+    /// One (of many) interval that represents ∅ ([[+∞], [-∞]]).
+    ///
+    /// [+∞]: Bound::INFINITY
+    /// [-∞]: Bound::NEG_INFINITY
+    pub const EMPTY: Self = Self(Bound::INFINITY, Bound::NEG_INFINITY);
+
+    /// The singleton \[`0`, `0`\].
+    pub const ZERO: Self = Self(ZERO, ZERO);
+
+    #[inline]
+    #[must_use]
+    /// Checks if the interval is empty.
+    ///
+    /// True for all `[a, b]` when `a > b`.
+    pub fn is_empty(&self) -> bool {
+        self.0 > self.1
+    }
+
+    #[inline]
+    #[must_use]
+    #[allow(clippy::float_cmp)]
+    /// Checks if the interval is a singleton.
+    ///
+    /// True only for `[a, a]`.
     pub fn is_singleton(&self) -> bool {
         self.0 == self.1
     }
-}
 
-impl Add for Interval {
-    type Output = Self;
+    #[inline]
+    #[must_use]
+    /// Retrieves the lower bound.
+    pub fn lo(&self) -> Bound {
+        self.0
+    }
 
-    fn add(self, other: Self) -> Self::Output {
-        Interval(self.0 + other.0, self.1 + other.1)
+    #[inline]
+    #[must_use]
+    /// Retrieves the higher bound.
+    pub fn hi(&self) -> Bound {
+        self.1
+    }
+
+    /// retrieves the interval's [`StrongSignClass`]
+    pub fn get_strong_sign(&self) -> StrongSignClass {
+        if self.0 > ZERO {
+            StrongSignClass::Positive
+        } else if self.1 < ZERO {
+            StrongSignClass::Negative
+        } else {
+            StrongSignClass::ContainsZero
+        }
+    }
+
+    /// retrieves the interval's [`WeakSignClass`]
+    pub fn get_weak_sign(&self) -> WeakSignClass {
+        if self.0 >= ZERO {
+            WeakSignClass::NonNegative
+        } else if self.1 <= ZERO {
+            WeakSignClass::NonPositive
+        } else {
+            WeakSignClass::StraddlesZero
+        }
     }
 }
+
+impl Uncertain for Interval {}
 
 impl Display for Interval {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         if self.is_singleton() {
             write!(f, "<{}>", self.0)
+        } else if *self == Self::R {
+            write!(f, "ℝ")
+        } else if self.is_empty() {
+            write!(f, "∅")
         } else {
             write!(f, "[{}, {}]", self.0, self.1)
         }
     }
+}
+
+impl TryFrom<(Bound, Bound)> for Interval {
+    type Error = FromError;
+
+    /// Tries to creates the interval [lo, hi].
+    fn try_from((lo, hi): (Bound, Bound)) -> Result<Self, Self::Error> {
+        match (lo.classify(), hi.classify()) {
+            (Nan, _) | (_, Nan) => Err(FromError::NaNBound),
+            (Infinite, Infinite) if lo.is_sign_positive() == hi.is_sign_positive() => {
+                Err(FromError::InvalidInfinity)
+            }
+            (_, _) => Ok(Self(lo, hi)),
+        }
+    }
+}
+
+impl TryFrom<Bound> for Interval {
+    type Error = FromError;
+
+    /// Tries to creates the interval [value, value].
+    fn try_from(value: Bound) -> Result<Self, Self::Error> {
+        match value.classify() {
+            Nan => Err(FromError::NaNBound),
+            Infinite => Err(FromError::InvalidInfinity),
+            _ => Ok(Self(value, value)),
+        }
+    }
+}
+
+#[must_use]
+/// Describes whether an [`Interval`] is all positive, all negative or contains zero.
+pub enum StrongSignClass {
+    Positive,
+    Negative,
+    ContainsZero,
+}
+
+#[must_use]
+#[derive(PartialEq)]
+/// Describes whether an [`Interval`] is all non-positive, all non-negative or contains zero in its interior.
+pub enum WeakSignClass {
+    NonNegative,
+    NonPositive,
+    StraddlesZero,
 }

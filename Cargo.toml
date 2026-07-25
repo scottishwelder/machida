@@ -3,8 +3,12 @@ name = "machida"
 version = "0.0.1"
 edition = "2024"
 
+[features]
+simpler_interval_multiplication = []
+
 [dependencies]
 rand = "0.8.5"
+srmfpa = "0.1.1"
 
 [lints.clippy]
 pedantic = "warn"

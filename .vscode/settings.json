@@ -7,5 +7,8 @@
     ],
     "rust-analyzer.cargo.features": [
         // "simpler_interval_multiplication"
-    ]
+    ],
+    "editor.unicodeHighlight.allowedCharacters": {
+        "ℝ": true
+    }
 }
