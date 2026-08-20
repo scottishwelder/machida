@@ -45,6 +45,10 @@ impl Div<Numeric> for Interval {
     type Output = Self;
 
     fn div(self, rhs: Numeric) -> Self::Output {
+        assert!(rhs.is_finite(), "Dividing interval by +∞, -∞ or NaN");
+        if self.is_empty() {
+            return Self::EMPTY;
+        }
         if rhs > 0.0 {
             Self(self.0.floor_div(rhs), self.1.ciel_div(rhs))
         } else if rhs < 0.0 {

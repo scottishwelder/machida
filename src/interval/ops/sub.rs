@@ -33,7 +33,10 @@ impl Sub<Numeric> for Interval {
     /// [+∞]: Numeric::INFINITY
     /// [-∞]: Numeric::NEG_INFINITY
     fn sub(self, rhs: Numeric) -> Self::Output {
-        assert!(rhs.is_finite(), "The scalar cannot be infinite or NaN");
+        assert!(rhs.is_finite(), "Subtracting +∞, -∞ or NaN from interval");
+        if self.is_empty() {
+            return Self::EMPTY;
+        }
         Self(self.0.floor_sub(rhs), self.1.ciel_sub(rhs))
     }
 }

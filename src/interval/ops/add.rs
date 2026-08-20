@@ -33,7 +33,10 @@ impl Add<Numeric> for Interval {
     /// [+∞]: Numeric::INFINITY
     /// [-∞]: Numeric::NEG_INFINITY
     fn add(self, rhs: Numeric) -> Self::Output {
-        assert!(rhs.is_finite(), "The scalar cannot be infinite or NaN");
+        assert!(rhs.is_finite(), "Adding +∞, -∞ or NaN to interval");
+        if self.is_empty() {
+            return Self::EMPTY;
+        }
         Self(self.0.floor_add(rhs), self.1.ciel_add(rhs))
     }
 }

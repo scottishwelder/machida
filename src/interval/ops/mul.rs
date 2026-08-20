@@ -80,7 +80,7 @@ impl Mul<Numeric> for Interval {
     type Output = Self;
 
     fn mul(self, rhs: Numeric) -> Self::Output {
-        // TODO: Is this necessary?
+        assert!(rhs.is_finite(), "Multiplying interval by +∞, -∞ or NaN");
         if self.is_empty() {
             return Self::EMPTY;
         }
