@@ -37,8 +37,8 @@ pub trait Uncertain:
 
 pub trait ExtraOps {
     type SqrtResult;
-    type ReciprocalResult;
+    type RecipResult;
 
     fn sqrt(self) -> Self::SqrtResult;
-    fn reciprocal(self) -> Self::ReciprocalResult;
+    fn recip(self) -> Self::RecipResult;
 }

@@ -5,7 +5,7 @@ use crate::uncertain::{ExtraOps, Numeric};
 
 impl ExtraOps for Interval {
     type SqrtResult = Self;
-    type ReciprocalResult = Self;
+    type RecipResult = Self;
 
     fn sqrt(self) -> Self::SqrtResult {
         if self.is_empty() || self.1 < 0.0 {
@@ -17,7 +17,7 @@ impl ExtraOps for Interval {
         Self(self.0.floor_sqrt(), self.1.ciel_sqrt())
     }
 
-    fn reciprocal(self) -> Self::ReciprocalResult {
+    fn recip(self) -> Self::RecipResult {
         if self.is_empty() || self == Self::ZERO {
             return Self::EMPTY;
         }

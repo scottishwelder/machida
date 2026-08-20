@@ -3,6 +3,7 @@
         "ciel",
         "clippy",
         "machida",
+        "recip",
         "srmfpa"
     ],
     "rust-analyzer.cargo.features": [
