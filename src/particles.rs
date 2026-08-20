@@ -1,37 +1,119 @@
-use super::Interval;
-use rand::distributions::{Distribution, Uniform};
-use rand::thread_rng;
+//! A collection of real numbers.
+//!
+//! The collection should represent a sampling of some sort of probability distribution.
 
-use crate::uncertain::Numeric;
+mod ops;
 
+use std::{any::type_name, fmt::Display, ops::Deref};
+
+use rand::{
+    distr::{Distribution as _, Uniform},
+    rng,
+    seq::IndexedRandom as _,
+};
+
+use crate::{
+    uncertain::{Numeric, Uncertain},
+    Interval,
+};
+
+#[must_use]
 #[derive(Debug)]
+/// A collection of real numbers.
+///
+/// Can be created with [`new_empty`], [`from_interval`],
+/// [`From<Vec<Numeric>>`] and [`FromIterator<Numeric>`].
+///
+/// See the [module-level documentation](self) for more details.
+///
+/// [`new_empty`]: Self::new_empty
+/// [`from_interval`]: Self::from_interval
+/// [`From<Vec<Numeric>>`]: Self::from
+/// [`FromIterator<Numeric>`]: Self::from_iter
 pub struct Particles(Vec<Numeric>);
 
 impl Particles {
-    pub fn from_interval(interval: Interval, size: u32) -> Particles {
-        let mut v = Vec::with_capacity(size as usize);
-        let mut rng = thread_rng();
-        let uni = Uniform::new_inclusive(interval.0, interval.1);
-        for _ in 0..size {
-            v.push(uni.sample(&mut rng));
-        }
-        Particles(v)
+    /// Creates an empty collection
+    pub fn new_empty() -> Self {
+        Vec::new().into()
     }
 
-    pub fn apply(&self, function: fn(Numeric) -> Numeric) -> Self {
-        let size = self.0.len();
-        let mut v = Vec::with_capacity(size);
-        for i in 0..size {
-            v.push(function(self.0[i]));
+    /// Creates a new collection with `size` particles uniformly sampled from the interval.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the length of the interval cannot be represented by a finite [`Numeric`].
+    pub fn from_interval(interval: Interval, size: usize) -> Self {
+        if interval.is_empty() {
+            return Self::new_empty();
         }
-        Self(v)
+        let mut v = Vec::with_capacity(size);
+        let mut rng = rng();
+        let uni = Uniform::new_inclusive(interval.lo(), interval.hi()).unwrap();
+        (0..size).for_each(|_| v.push(uni.sample(&mut rng)));
+        v.into()
+    }
+
+    /// Creates a new collection by mapping each element.
+    pub fn map<F: FnMut(&Numeric) -> Numeric>(&self, f: F) -> Self {
+        self.0.iter().map(f).collect()
+    }
+
+    /// Maps each element in place.
+    pub fn map_in_place<F: FnMut(&mut Numeric)>(&mut self, f: F) {
+        self.0.iter_mut().for_each(f);
+    }
+
+    /// Creates a new collection by mapping two collections.
+    /// The first one will be traversed in order and the second one will be sampled randomly.
+    /// The result will have the same size as the first one, unless the second one is empty,
+    /// in which case the result will also be empty.
+    pub fn sample_map<F>(&self, other: &Particles, f: F) -> Self
+    where
+        F: FnMut((&Numeric, &Numeric)) -> Numeric,
+    {
+        let mut rng = rng();
+        let Some(iter_b) = other.choose_iter(&mut rng) else { return Self::new_empty() };
+        self.iter().zip(iter_b).map(f).collect()
+    }
+
+    /// The same as [`sample_map`](Self::sample_map),
+    /// but no allocation is done and the result is stored in the first argument.
+    pub fn sample_map_in_place<F>(&mut self, other: &Particles, f: F)
+    where
+        F: FnMut((&mut Numeric, &Numeric)),
+    {
+        match other.0.choose_iter(&mut rng()) {
+            Some(iter_2) => self.0.iter_mut().zip(iter_2).for_each(f),
+            None => *self = Particles::new_empty(),
+        }
     }
 }
 
-// impl Add for &Particles {
-//     type Output = Particles;
+impl Uncertain for Particles {}
 
-//     fn add(self, other: Self) -> Particles {
+impl From<Vec<Numeric>> for Particles {
+    fn from(value: Vec<Numeric>) -> Self {
+        Self(value)
+    }
+}
 
-//     }
-// }
+impl FromIterator<Numeric> for Particles {
+    fn from_iter<T: IntoIterator<Item = Numeric>>(iter: T) -> Self {
+        iter.into_iter().collect::<Vec<_>>().into()
+    }
+}
+
+impl Display for Particles {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Collection of {} {}", self.len(), type_name::<Numeric>())
+    }
+}
+
+impl Deref for Particles {
+    type Target = [f64];
+
+    fn deref(&self) -> &Self::Target {
+        self.0.deref()
+    }
+}

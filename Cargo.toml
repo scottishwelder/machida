@@ -7,7 +7,7 @@ edition = "2024"
 simpler_interval_multiplication = []
 
 [dependencies]
-rand = "0.8.5"
+rand = "0.10.2"
 srmfpa = "0.1.1"
 
 [lints.clippy]
