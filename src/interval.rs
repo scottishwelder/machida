@@ -6,15 +6,9 @@ use std::{
     num::FpCategory::{Infinite, Nan},
 };
 
-use crate::uncertain::Uncertain;
+use crate::uncertain::{Numeric, Uncertain};
 
 pub use error::FromError;
-
-/// The type for the bonds of intervals
-pub type Bound = f64;
-
-/// A zero scalar according to the bound type
-const ZERO: Bound = 0.0;
 
 #[must_use]
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -34,16 +28,16 @@ const ZERO: Bound = 0.0;
 /// - [[-∞], [+∞]] is ℝ; and
 /// - For all `a > b`, [a, b] is ∅.
 ///
-/// [+∞]: Bound::INFINITY
-/// [-∞]: Bound::NEG_INFINITY
-/// [`NaN`]: Bound::NAN
+/// [+∞]: Numeric::INFINITY
+/// [-∞]: Numeric::NEG_INFINITY
+/// [`NaN`]: Numeric::NAN
 /// [`Add`]: std::ops::Add
 /// [`Sub`]: std::ops::Sub
 /// [`Mul`]: std::ops::Mul
 /// [`Div`]: std::ops::Div
 /// [`Neg`]: std::ops::Neg
 /// [some extra operations]: crate::uncertain::ExtraOps
-pub struct Interval(Bound, Bound);
+pub struct Interval(Numeric, Numeric);
 
 impl Interval {
     /// Creates the interval [lo, hi].
@@ -53,11 +47,11 @@ impl Interval {
     ///
     /// [`try_from`] returns an error instead.
     ///
-    /// [`NaN`]: Bound::NAN
-    /// [+∞]: Bound::INFINITY
-    /// [-∞]: Bound::NEG_INFINITY
+    /// [`NaN`]: Numeric::NAN
+    /// [+∞]: Numeric::INFINITY
+    /// [-∞]: Numeric::NEG_INFINITY
     /// [`try_from`]: Self::try_from
-    pub fn new(lo: Bound, hi: Bound) -> Self {
+    pub fn new(lo: Numeric, hi: Numeric) -> Self {
         match (lo.classify(), hi.classify()) {
             (Nan, _) | (_, Nan) => {
                 panic!("Interval bounds should never be NaN")
@@ -77,11 +71,11 @@ impl Interval {
     ///
     /// [`try_from`] returns an error instead.
     ///
-    /// [`NaN`]: Bound::NAN
-    /// [+∞]: Bound::INFINITY
-    /// [-∞]: Bound::NEG_INFINITY
+    /// [`NaN`]: Numeric::NAN
+    /// [+∞]: Numeric::INFINITY
+    /// [-∞]: Numeric::NEG_INFINITY
     /// [`try_from`]: Self::try_from
-    pub fn new_singleton(value: Bound) -> Self {
+    pub fn new_singleton(value: Numeric) -> Self {
         assert!(
             value.is_finite(),
             "Cannot create [+∞, +∞], [-∞, -∞] or [NaN, NaN]"
@@ -91,18 +85,18 @@ impl Interval {
 
     /// The only interval that represents ℝ ([[-∞], [+∞]]).
     ///
-    /// [+∞]: Bound::INFINITY
-    /// [-∞]: Bound::NEG_INFINITY
-    pub const R: Self = Self(Bound::NEG_INFINITY, Bound::INFINITY);
+    /// [+∞]: Numeric::INFINITY
+    /// [-∞]: Numeric::NEG_INFINITY
+    pub const R: Self = Self(Numeric::NEG_INFINITY, Numeric::INFINITY);
 
     /// One (of many) interval that represents ∅ ([[+∞], [-∞]]).
     ///
-    /// [+∞]: Bound::INFINITY
-    /// [-∞]: Bound::NEG_INFINITY
-    pub const EMPTY: Self = Self(Bound::INFINITY, Bound::NEG_INFINITY);
+    /// [+∞]: Numeric::INFINITY
+    /// [-∞]: Numeric::NEG_INFINITY
+    pub const EMPTY: Self = Self(Numeric::INFINITY, Numeric::NEG_INFINITY);
 
     /// The singleton \[`0`, `0`\].
-    pub const ZERO: Self = Self(ZERO, ZERO);
+    pub const ZERO: Self = Self(0.0, 0.0);
 
     #[inline]
     #[must_use]
@@ -125,23 +119,23 @@ impl Interval {
 
     #[inline]
     #[must_use]
-    /// Retrieves the lower bound.
-    pub fn lo(&self) -> Bound {
+    /// Returns the lower bound.
+    pub fn lo(&self) -> Numeric {
         self.0
     }
 
     #[inline]
     #[must_use]
-    /// Retrieves the higher bound.
-    pub fn hi(&self) -> Bound {
+    /// Returns the higher bound.
+    pub fn hi(&self) -> Numeric {
         self.1
     }
 
     /// retrieves the interval's [`StrongSignClass`]
     pub fn get_strong_sign(&self) -> StrongSignClass {
-        if self.0 > ZERO {
+        if self.0 > 0.0 {
             StrongSignClass::Positive
-        } else if self.1 < ZERO {
+        } else if self.1 < 0.0 {
             StrongSignClass::Negative
         } else {
             StrongSignClass::ContainsZero
@@ -150,9 +144,9 @@ impl Interval {
 
     /// retrieves the interval's [`WeakSignClass`]
     pub fn get_weak_sign(&self) -> WeakSignClass {
-        if self.0 >= ZERO {
+        if self.0 >= 0.0 {
             WeakSignClass::NonNegative
-        } else if self.1 <= ZERO {
+        } else if self.1 <= 0.0 {
             WeakSignClass::NonPositive
         } else {
             WeakSignClass::StraddlesZero
@@ -176,11 +170,11 @@ impl Display for Interval {
     }
 }
 
-impl TryFrom<(Bound, Bound)> for Interval {
+impl TryFrom<(Numeric, Numeric)> for Interval {
     type Error = FromError;
 
     /// Tries to creates the interval [lo, hi].
-    fn try_from((lo, hi): (Bound, Bound)) -> Result<Self, Self::Error> {
+    fn try_from((lo, hi): (Numeric, Numeric)) -> Result<Self, Self::Error> {
         match (lo.classify(), hi.classify()) {
             (Nan, _) | (_, Nan) => Err(FromError::NaNBound),
             (Infinite, Infinite) if lo.is_sign_positive() == hi.is_sign_positive() => {
@@ -191,11 +185,11 @@ impl TryFrom<(Bound, Bound)> for Interval {
     }
 }
 
-impl TryFrom<Bound> for Interval {
+impl TryFrom<Numeric> for Interval {
     type Error = FromError;
 
     /// Tries to creates the interval [value, value].
-    fn try_from(value: Bound) -> Result<Self, Self::Error> {
+    fn try_from(value: Numeric) -> Result<Self, Self::Error> {
         match value.classify() {
             Nan => Err(FromError::NaNBound),
             Infinite => Err(FromError::InvalidInfinity),

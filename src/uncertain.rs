@@ -5,29 +5,31 @@ use std::{
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
-// TODO: Centralize base numeric type?
-type NumberType = f64;
+/// The base numeric type for all representations in this crate.
+pub type Numeric = f64;
 
-pub(crate) trait Uncertain:
+// TODO: Should take into account operations with references?
+/// Common trait between all uncertain types
+pub trait Uncertain:
     Sized
     + Debug
     + Display
     + Add<Output = Self>
-    + Add<NumberType, Output = Self>
+    + Add<Numeric, Output = Self>
     + AddAssign
-    + AddAssign<NumberType>
+    + AddAssign<Numeric>
     + Sub<Output = Self>
-    + Sub<NumberType, Output = Self>
+    + Sub<Numeric, Output = Self>
     + SubAssign
-    + SubAssign<NumberType>
+    + SubAssign<Numeric>
     + Mul<Output = Self>
-    + Mul<NumberType, Output = Self>
+    + Mul<Numeric, Output = Self>
     + MulAssign
-    + MulAssign<NumberType>
+    + MulAssign<Numeric>
     + Div<Output = Self>
-    + Div<NumberType, Output = Self>
+    + Div<Numeric, Output = Self>
     + DivAssign
-    + DivAssign<NumberType>
+    + DivAssign<Numeric>
     + Neg
     + ExtraOps
 {

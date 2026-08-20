@@ -2,7 +2,7 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssi
 
 use srmfpa::{CielArithmetic, CielMath, FloorArithmetic, FloorMath};
 
-use super::{Bound, Interval, WeakSignClass, ZERO};
+use super::{Interval, WeakSignClass};
 use crate::uncertain::ExtraOps;
 
 impl ExtraOps for Interval {
@@ -10,11 +10,11 @@ impl ExtraOps for Interval {
     type ReciprocalResult = Self;
 
     fn sqrt(self) -> Self::SqrtResult {
-        if self.is_empty() || self.1 < ZERO {
+        if self.is_empty() || self.1 < 0.0 {
             return Self::EMPTY;
         }
-        if self.0 <= ZERO {
-            return Self(ZERO, self.1.ciel_sqrt());
+        if self.0 <= 0.0 {
+            return Self(0.0, self.1.ciel_sqrt());
         }
         Self(self.0.floor_sqrt(), self.1.ciel_sqrt())
     }
@@ -26,13 +26,13 @@ impl ExtraOps for Interval {
         if self.get_weak_sign() == WeakSignClass::StraddlesZero {
             return Self::R;
         }
-        let lo = if self.1 == ZERO {
-            Bound::NEG_INFINITY
+        let lo = if self.1 == 0.0 {
+            Numeric::NEG_INFINITY
         } else {
             1.0.floor_div(self.1)
         };
-        let hi = if self.0 == ZERO {
-            Bound::INFINITY
+        let hi = if self.0 == 0.0 {
+            Numeric::INFINITY
         } else {
             1.0.floor_div(self.0)
         };
@@ -52,16 +52,16 @@ impl Add for Interval {
     }
 }
 
-impl Add<Bound> for Interval {
+impl Add<Numeric> for Interval {
     type Output = Self;
 
     /// # Panics
     /// Panics if the scalar is [+∞], [-∞] or [`NaN`]
     ///
-    /// [`NaN`]: Bound::NAN
-    /// [+∞]: Bound::INFINITY
-    /// [-∞]: Bound::NEG_INFINITY
-    fn add(self, rhs: Bound) -> Self::Output {
+    /// [`NaN`]: Numeric::NAN
+    /// [+∞]: Numeric::INFINITY
+    /// [-∞]: Numeric::NEG_INFINITY
+    fn add(self, rhs: Numeric) -> Self::Output {
         assert!(rhs.is_finite(), "The scalar cannot be infinite or NaN");
         Self(self.0.floor_add(rhs), self.1.ciel_add(rhs))
     }
@@ -73,8 +73,8 @@ impl AddAssign for Interval {
     }
 }
 
-impl AddAssign<Bound> for Interval {
-    fn add_assign(&mut self, rhs: Bound) {
+impl AddAssign<Numeric> for Interval {
+    fn add_assign(&mut self, rhs: Numeric) {
         *self = *self + rhs;
     }
 }
@@ -91,16 +91,16 @@ impl Sub for Interval {
     }
 }
 
-impl Sub<Bound> for Interval {
+impl Sub<Numeric> for Interval {
     type Output = Self;
 
     /// # Panics
     /// Panics if the scalar is [+∞], [-∞] or [`NaN`]
     ///
-    /// [`NaN`]: Bound::NAN
-    /// [+∞]: Bound::INFINITY
-    /// [-∞]: Bound::NEG_INFINITY
-    fn sub(self, rhs: Bound) -> Self::Output {
+    /// [`NaN`]: Numeric::NAN
+    /// [+∞]: Numeric::INFINITY
+    /// [-∞]: Numeric::NEG_INFINITY
+    fn sub(self, rhs: Numeric) -> Self::Output {
         assert!(rhs.is_finite(), "The scalar cannot be infinite or NaN");
         Self(self.0.floor_sub(rhs), self.1.ciel_sub(rhs))
     }
@@ -112,8 +112,8 @@ impl SubAssign for Interval {
     }
 }
 
-impl SubAssign<Bound> for Interval {
-    fn sub_assign(&mut self, rhs: Bound) {
+impl SubAssign<Numeric> for Interval {
+    fn sub_assign(&mut self, rhs: Numeric) {
         *self = *self - rhs;
     }
 }
@@ -183,17 +183,17 @@ impl Mul for Interval {
     }
 }
 
-impl Mul<Bound> for Interval {
+impl Mul<Numeric> for Interval {
     type Output = Self;
 
-    fn mul(self, rhs: Bound) -> Self::Output {
+    fn mul(self, rhs: Numeric) -> Self::Output {
         // TODO: Is this necessary?
         if self.is_empty() {
             return Self::EMPTY;
         }
-        if rhs > ZERO {
+        if rhs > 0.0 {
             Self(self.0.floor_mul(rhs), self.1.ciel_mul(rhs))
-        } else if rhs < ZERO {
+        } else if rhs < 0.0 {
             Self(self.1.floor_mul(rhs), self.0.ciel_mul(rhs))
         } else {
             Self::ZERO
@@ -207,8 +207,8 @@ impl MulAssign for Interval {
     }
 }
 
-impl MulAssign<Bound> for Interval {
-    fn mul_assign(&mut self, rhs: Bound) {
+impl MulAssign<Numeric> for Interval {
+    fn mul_assign(&mut self, rhs: Numeric) {
         *self = *self * rhs;
     }
 }
@@ -243,13 +243,13 @@ impl Div for Interval {
     }
 }
 
-impl Div<Bound> for Interval {
+impl Div<Numeric> for Interval {
     type Output = Self;
 
-    fn div(self, rhs: Bound) -> Self::Output {
-        if rhs > ZERO {
+    fn div(self, rhs: Numeric) -> Self::Output {
+        if rhs > 0.0 {
             Self(self.0.floor_div(rhs), self.1.ciel_div(rhs))
-        } else if rhs < ZERO {
+        } else if rhs < 0.0 {
             Self(self.1.floor_div(rhs), self.0.ciel_div(rhs))
         } else {
             Self::EMPTY
@@ -263,8 +263,8 @@ impl DivAssign for Interval {
     }
 }
 
-impl DivAssign<Bound> for Interval {
-    fn div_assign(&mut self, rhs: Bound) {
+impl DivAssign<Numeric> for Interval {
+    fn div_assign(&mut self, rhs: Numeric) {
         *self = *self / rhs;
     }
 }

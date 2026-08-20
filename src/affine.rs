@@ -5,12 +5,12 @@ pub use noise_symbol::NoiseSymbol;
 use std::collections::HashMap;
 use std::ops::{Add, Sub};
 
-type NumberType = f64;
+use crate::uncertain::Numeric;
 
 #[derive(Debug, Clone)]
 pub struct Affine {
-    pub center: NumberType,
-    pub noise: HashMap<NoiseSymbol, NumberType>,
+    pub center: Numeric,
+    pub noise: HashMap<NoiseSymbol, Numeric>,
 }
 
 impl Affine {

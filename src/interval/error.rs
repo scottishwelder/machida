@@ -1,16 +1,16 @@
 /// Errors caused by the creation of an [`Interval`]
-/// from ([`Bound`], [`Bound`]) or [`Bound`].
+/// from ([`Numeric`], [`Numeric`]) or [`Numeric`].
 ///
 /// [`Interval`]: super::Interval
-/// [`Bound`]: super::Bound
+/// [`Numeric`]: crate::uncertain::Numeric
 pub enum FromError {
     /// [`NaN`] was passed as one of the bounds.
     ///
-    /// [`NaN`]: super::Bound::NAN
+    /// [`NaN`]: crate::uncertain::Numeric::NAN
     NaNBound,
     /// Tried to create [[+∞], [+∞]] or [[-∞], [-∞]].
     ///
-    /// [+∞]: super::Bound::INFINITY
-    /// [-∞]: super::Bound::NEG_INFINITY
+    /// [+∞]: crate::uncertain::Numeric::INFINITY
+    /// [-∞]: crate::uncertain::Numeric::NEG_INFINITY
     InvalidInfinity,
 }
