@@ -35,6 +35,7 @@ pub trait Uncertain:
 {
 }
 
+/// Extra operations to be implemented by all uncertain types.
 pub trait ExtraOps {
     type SqrtResult;
     type RecipResult;

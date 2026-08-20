@@ -5,6 +5,7 @@ use srmfpa::{CielArithmetic, FloorArithmetic};
 use super::super::{Interval, WeakSignClass};
 use crate::uncertain::Numeric;
 
+// Canonical
 impl Mul for Interval {
     type Output = Self;
 
@@ -70,12 +71,14 @@ impl Mul for Interval {
     }
 }
 
+// Forwards to Mul for Interval (no need to reuse memory)
 impl MulAssign for Interval {
     fn mul_assign(&mut self, rhs: Self) {
         *self = *self * rhs;
     }
 }
 
+// Canonical
 impl Mul<Numeric> for Interval {
     type Output = Self;
 
@@ -94,6 +97,7 @@ impl Mul<Numeric> for Interval {
     }
 }
 
+// Forwards to Mul<Numeric> for Interval (commutation)
 impl Mul<Interval> for Numeric {
     type Output = Interval;
     fn mul(self, rhs: Interval) -> Self::Output {
@@ -101,6 +105,7 @@ impl Mul<Interval> for Numeric {
     }
 }
 
+// Forwards to Mul<Numeric> for Interval (no need to reuse memory)
 impl MulAssign<Numeric> for Interval {
     fn mul_assign(&mut self, rhs: Numeric) {
         *self = *self * rhs;

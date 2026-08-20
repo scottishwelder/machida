@@ -1,3 +1,5 @@
+// TODO: Check bounds at zero
+
 use std::ops::{Div, DivAssign};
 
 use srmfpa::{CielArithmetic, FloorArithmetic};
@@ -5,6 +7,7 @@ use srmfpa::{CielArithmetic, FloorArithmetic};
 use super::super::{Interval, WeakSignClass};
 use crate::uncertain::Numeric;
 
+// Canonical
 impl Div for Interval {
     type Output = Self;
 
@@ -35,12 +38,14 @@ impl Div for Interval {
     }
 }
 
+// Forwards to Div for Interval (no need to reuse memory)
 impl DivAssign for Interval {
     fn div_assign(&mut self, rhs: Self) {
         *self = *self / rhs;
     }
 }
 
+// Canonical
 impl Div<Numeric> for Interval {
     type Output = Self;
 
@@ -59,6 +64,8 @@ impl Div<Numeric> for Interval {
     }
 }
 
+// Canonical.
+// Cannot forward to Div<Numeric> for Interval because division is not commutative.
 impl Div<Interval> for Numeric {
     type Output = Interval;
     fn div(self, rhs: Interval) -> Self::Output {
@@ -82,6 +89,7 @@ impl Div<Interval> for Numeric {
     }
 }
 
+// Forwards to Div<Numeric> for Interval (no need to reuse memory)
 impl DivAssign<Numeric> for Interval {
     fn div_assign(&mut self, rhs: Numeric) {
         *self = *self / rhs;

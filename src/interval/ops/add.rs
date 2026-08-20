@@ -5,6 +5,7 @@ use srmfpa::{CielArithmetic, FloorArithmetic};
 use super::super::Interval;
 use crate::uncertain::Numeric;
 
+//Canonical
 impl Add for Interval {
     type Output = Self;
 
@@ -17,21 +18,17 @@ impl Add for Interval {
     }
 }
 
+// Forwards to Add for Interval (no need to reuse memory)
 impl AddAssign for Interval {
     fn add_assign(&mut self, rhs: Self) {
         *self = *self + rhs;
     }
 }
 
+//Canonical
 impl Add<Numeric> for Interval {
     type Output = Self;
 
-    /// # Panics
-    /// Panics if the scalar is [+∞], [-∞] or [`NaN`]
-    ///
-    /// [`NaN`]: Numeric::NAN
-    /// [+∞]: Numeric::INFINITY
-    /// [-∞]: Numeric::NEG_INFINITY
     fn add(self, rhs: Numeric) -> Self::Output {
         assert!(rhs.is_finite(), "Adding +∞, -∞ or NaN to interval");
         if self.is_empty() {
@@ -41,6 +38,7 @@ impl Add<Numeric> for Interval {
     }
 }
 
+// Forwards to Add<Numeric> for Interval (commutation)
 impl Add<Interval> for Numeric {
     type Output = Interval;
     fn add(self, rhs: Interval) -> Self::Output {
@@ -48,6 +46,7 @@ impl Add<Interval> for Numeric {
     }
 }
 
+// Forwards to Add<Numeric> for Interval (no need to reuse memory)
 impl AddAssign<Numeric> for Interval {
     fn add_assign(&mut self, rhs: Numeric) {
         *self = *self + rhs;

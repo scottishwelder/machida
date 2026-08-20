@@ -1,3 +1,27 @@
+//! An [`Interval`] in the real numbers, with lower and higher bounds.
+//!
+//! Represents an unknown value contained in the interval.
+//!
+//! Notable cases:
+//!
+//! - [`NaN`] is never a valid bound;
+//!   - Operations that take a scalar will panic if given [`NaN`].
+//! - [-∞] and [+∞] are valid bounds;
+//! - However, [[+∞], [+∞]] and [[-∞], [-∞]] are not valid intervals;
+//!   - Operations that take a scalar will panic if given [+∞] or [-∞].
+//! - [[-∞], [+∞]] is ℝ; and
+//! - For all `a > b`, [a, b] is ∅.
+//!
+//! [+∞]: Numeric::INFINITY
+//! [-∞]: Numeric::NEG_INFINITY
+//! [`NaN`]: Numeric::NAN
+//! [`Add`]: std::ops::Add
+//! [`Sub`]: std::ops::Sub
+//! [`Mul`]: std::ops::Mul
+//! [`Div`]: std::ops::Div
+//! [`Neg`]: std::ops::Neg
+//! [some extra operations]: crate::uncertain::ExtraOps
+
 mod error;
 mod ops;
 
@@ -16,31 +40,9 @@ use srmfpa::{CielArithmetic, FloorArithmetic};
 
 #[must_use]
 #[derive(Clone, Copy, Debug, PartialEq)]
-/// A real interval, represented by its lower and higher bounds.
+/// A real interval.
 ///
-/// Implements [`Add`], [`Sub`], [`Mul`] and [`Div`]; for intervals and scalars.
-///
-/// Also implements [`Neg`] and [some extra operations].
-///
-/// Notable cases:
-///
-/// - [`NaN`] is never a valid bound;
-///   - Operations that take a scalar will panic if given [`NaN`].
-/// - [-∞] and [+∞] are valid bounds;
-/// - But [[+∞], [+∞]] and [[-∞], [-∞]] are not valid intervals;
-///   - Operations that take a scalar will panic if given [+∞] or [-∞].
-/// - [[-∞], [+∞]] is ℝ; and
-/// - For all `a > b`, [a, b] is ∅.
-///
-/// [+∞]: Numeric::INFINITY
-/// [-∞]: Numeric::NEG_INFINITY
-/// [`NaN`]: Numeric::NAN
-/// [`Add`]: std::ops::Add
-/// [`Sub`]: std::ops::Sub
-/// [`Mul`]: std::ops::Mul
-/// [`Div`]: std::ops::Div
-/// [`Neg`]: std::ops::Neg
-/// [some extra operations]: crate::uncertain::ExtraOps
+/// See the [module-level documentation](self) for more information.
 pub struct Interval(Numeric, Numeric);
 
 impl Interval {
@@ -155,7 +157,8 @@ impl Interval {
         }
     }
 
-    /// retrieves the interval's [`WeakSignClass`]
+    /// Returns whether an interval is
+    /// entirely non-positive, entirely non-negative or contains zero in its interior.
     pub fn get_weak_sign(&self) -> WeakSignClass {
         if self.0 >= 0.0 {
             WeakSignClass::NonNegative
@@ -226,7 +229,7 @@ impl From<&Affine> for Interval {
 }
 
 #[must_use]
-/// Describes whether an [`Interval`] is all positive, all negative or contains zero.
+/// Describes whether an [`Interval`] is entirely positive, entirely negative or contains zero.
 pub enum StrongSignClass {
     Positive,
     Negative,
@@ -235,7 +238,8 @@ pub enum StrongSignClass {
 
 #[must_use]
 #[derive(PartialEq)]
-/// Describes whether an [`Interval`] is all non-positive, all non-negative or contains zero in its interior.
+/// Describes whether an [`Interval`] is
+/// entirely non-positive, entirely non-negative or contains zero in its interior.
 pub enum WeakSignClass {
     NonNegative,
     NonPositive,

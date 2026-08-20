@@ -5,6 +5,7 @@ use srmfpa::{CielArithmetic, FloorArithmetic};
 use super::super::Interval;
 use crate::uncertain::Numeric;
 
+// Canonical
 impl Sub for Interval {
     type Output = Self;
 
@@ -17,21 +18,17 @@ impl Sub for Interval {
     }
 }
 
+// Forwards to Sub for Interval (no need to reuse memory)
 impl SubAssign for Interval {
     fn sub_assign(&mut self, rhs: Self) {
         *self = *self - rhs;
     }
 }
 
+// Canonical
 impl Sub<Numeric> for Interval {
     type Output = Self;
 
-    /// # Panics
-    /// Panics if the scalar is [+∞], [-∞] or [`NaN`]
-    ///
-    /// [`NaN`]: Numeric::NAN
-    /// [+∞]: Numeric::INFINITY
-    /// [-∞]: Numeric::NEG_INFINITY
     fn sub(self, rhs: Numeric) -> Self::Output {
         assert!(rhs.is_finite(), "Subtracting +∞, -∞ or NaN from interval");
         if self.is_empty() {
@@ -41,6 +38,8 @@ impl Sub<Numeric> for Interval {
     }
 }
 
+// Canonical.
+// Cannot forward to Sub<Numeric> for Interval because subtraction is not commutative.
 impl Sub<Interval> for Numeric {
     type Output = Interval;
     fn sub(self, rhs: Interval) -> Self::Output {
@@ -52,6 +51,7 @@ impl Sub<Interval> for Numeric {
     }
 }
 
+// Forwards to Sub<Numeric> for Interval (no need to reuse memory)
 impl SubAssign<Numeric> for Interval {
     fn sub_assign(&mut self, rhs: Numeric) {
         *self = *self - rhs;
