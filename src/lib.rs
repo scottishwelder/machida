@@ -1,8 +1,8 @@
-mod affine;
+pub mod affine;
 pub mod interval;
-mod particles;
+pub mod particles;
 pub mod uncertain;
 
-pub use affine::{Affine, NoiseSymbol};
+pub use affine::Affine;
 pub use interval::Interval;
 pub use particles::Particles;
