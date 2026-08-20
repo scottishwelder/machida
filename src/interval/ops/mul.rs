@@ -94,6 +94,13 @@ impl Mul<Numeric> for Interval {
     }
 }
 
+impl Mul<Interval> for Numeric {
+    type Output = Interval;
+    fn mul(self, rhs: Interval) -> Self::Output {
+        rhs * self
+    }
+}
+
 impl MulAssign<Numeric> for Interval {
     fn mul_assign(&mut self, rhs: Numeric) {
         *self = *self * rhs;

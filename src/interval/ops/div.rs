@@ -55,6 +55,29 @@ impl Div<Numeric> for Interval {
     }
 }
 
+impl Div<Interval> for Numeric {
+    type Output = Interval;
+    fn div(self, rhs: Interval) -> Self::Output {
+        assert!(self.is_finite(), "Dividing +∞, -∞ or NaN by interval");
+        if rhs.is_empty() {
+            return Interval::EMPTY;
+        }
+        if self == 0.0 {
+            return if rhs == Interval::ZERO { Interval::EMPTY } else { Interval::ZERO };
+        }
+        match rhs.get_weak_sign() {
+            WeakSignClass::StraddlesZero => Interval::R,
+            WeakSignClass::NonNegative | WeakSignClass::NonPositive => {
+                if self > 0.0 {
+                    Interval(self.floor_div(rhs.1), self.floor_div(rhs.0))
+                } else {
+                    Interval(self.floor_div(rhs.0), self.floor_div(rhs.1))
+                }
+            }
+        }
+    }
+}
+
 impl DivAssign<Numeric> for Interval {
     fn div_assign(&mut self, rhs: Numeric) {
         *self = *self / rhs;

@@ -38,6 +38,13 @@ impl Add<Numeric> for Interval {
     }
 }
 
+impl Add<Interval> for Numeric {
+    type Output = Interval;
+    fn add(self, rhs: Interval) -> Self::Output {
+        rhs + self
+    }
+}
+
 impl AddAssign<Numeric> for Interval {
     fn add_assign(&mut self, rhs: Numeric) {
         *self = *self + rhs;
