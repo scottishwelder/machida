@@ -1,75 +1,58 @@
-mod noise_symbol;
+mod general;
+mod ops;
 
-use super::Interval;
-pub use noise_symbol::NoiseSymbol;
-use std::collections::HashMap;
-use std::ops::{Add, Sub};
+use std::fmt::{Display, Formatter};
 
-use crate::uncertain::Numeric;
+use crate::{
+    uncertain::{Numeric, Uncertain},
+    Interval,
+};
+use general::GeneralAffineForm;
 
-#[derive(Debug, Clone)]
-pub struct Affine {
-    pub center: Numeric,
-    pub noise: HashMap<NoiseSymbol, Numeric>,
+#[must_use]
+#[derive(Clone, Debug, PartialEq)]
+pub enum Affine {
+    R,
+    Empty,
+    General(GeneralAffineForm),
 }
 
 impl Affine {
-    // pub fn new() -> Self {
-    //     Affine {
-    //         center: 0.0,
-    //         noise: HashMap::from([(noise_symbol::NoiseSymbol::new(), 1.0)]),
-    //     }
-    // }
-    pub fn interval(&self) -> Interval {
-        let radius: f64 = self.noise.values().sum();
-        Interval::new(self.center - radius, self.center + radius)
+    pub fn singleton(value: Numeric) -> Self {
+        GeneralAffineForm::singleton(value).into()
     }
-}
 
-impl Add for &Affine {
-    type Output = Affine;
-
-    fn add(self, other: Self) -> Affine {
-        let mut new_hash = HashMap::new();
-        for (noise_symbol, first_coefficient) in &self.noise {
-            let second_coefficient = other.noise.get(noise_symbol).unwrap_or(&0.0);
-            let sum = first_coefficient + second_coefficient;
-            if sum != 0.0 {
-                new_hash.insert(*noise_symbol, sum);
-            }
-        }
-        for (noise_symbol, second_coefficient) in &other.noise {
-            if !self.noise.contains_key(noise_symbol) {
-                new_hash.insert(*noise_symbol, *second_coefficient);
-            };
-        }
-        Affine {
-            center: self.center + other.center,
-            noise: new_hash,
+    #[must_use]
+    pub fn get_radius(&self) -> Numeric {
+        match self {
+            Affine::R => Numeric::INFINITY,
+            Affine::Empty => 0.0,
+            Affine::General(general) => general.get_radius(),
         }
     }
 }
 
-impl Sub for &Affine {
-    type Output = Affine;
+impl From<Interval> for Affine {
+    fn from(value: Interval) -> Self {
+        if value.is_empty() {
+            return Self::Empty;
+        }
+        if value == Interval::R {
+            return Self::R;
+        }
+        let value: GeneralAffineForm = value.into();
+        value.into()
+    }
+}
 
-    fn sub(self, other: Self) -> Affine {
-        let mut new_hash = HashMap::new();
-        for (noise_symbol, first_coefficient) in &self.noise {
-            let second_coefficient = other.noise.get(noise_symbol).unwrap_or(&0.0);
-            let difference = first_coefficient - second_coefficient;
-            if difference != 0.0 {
-                new_hash.insert(*noise_symbol, difference);
-            }
-        }
-        for (noise_symbol, second_coefficient) in &other.noise {
-            if !self.noise.contains_key(noise_symbol) {
-                new_hash.insert(*noise_symbol, -second_coefficient);
-            };
-        }
-        Affine {
-            center: self.center - other.center,
-            noise: new_hash,
+impl Display for Affine {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        match self {
+            Affine::R => write!(f, "ℝ"),
+            Affine::Empty => write!(f, "∅"),
+            Affine::General(general) => general.fmt(f),
         }
     }
 }
+
+impl Uncertain for Affine {}
