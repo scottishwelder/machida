@@ -1,6 +1,6 @@
 use std::ops::{Mul, MulAssign};
 
-use srmfpa::{CielArithmetic, FloorArithmetic};
+use srmfpa::{CielArithmetic as _, FloorArithmetic as _};
 
 use super::super::{Interval, WeakSignClass};
 use crate::uncertain::Numeric;

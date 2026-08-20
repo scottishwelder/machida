@@ -82,10 +82,7 @@ impl Interval {
     /// [-∞]: Numeric::NEG_INFINITY
     /// [`try_from`]: Self::try_from
     pub fn new_singleton(value: Numeric) -> Self {
-        assert!(
-            value.is_finite(),
-            "Cannot create [+∞, +∞], [-∞, -∞] or [NaN, NaN]"
-        );
+        assert!(value.is_finite(), "Cannot create [+∞, +∞], [-∞, -∞] or [NaN, NaN]");
         Self(value, value)
     }
 

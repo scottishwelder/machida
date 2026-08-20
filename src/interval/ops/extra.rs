@@ -1,4 +1,4 @@
-use srmfpa::{CielMath, FloorArithmetic, FloorMath};
+use srmfpa::{CielMath as _, FloorArithmetic as _, FloorMath as _};
 
 use super::super::{Interval, WeakSignClass};
 use crate::uncertain::{ExtraOps, Numeric};
@@ -24,16 +24,8 @@ impl ExtraOps for Interval {
         if self.get_weak_sign() == WeakSignClass::StraddlesZero {
             return Self::R;
         }
-        let lo = if self.1 == 0.0 {
-            Numeric::NEG_INFINITY
-        } else {
-            1.0.floor_div(self.1)
-        };
-        let hi = if self.0 == 0.0 {
-            Numeric::INFINITY
-        } else {
-            1.0.floor_div(self.0)
-        };
+        let lo = if self.1 == 0.0 { Numeric::NEG_INFINITY } else { 1.0.floor_div(self.1) };
+        let hi = if self.0 == 0.0 { Numeric::INFINITY } else { 1.0.floor_div(self.0) };
         Self(lo, hi)
     }
 }
