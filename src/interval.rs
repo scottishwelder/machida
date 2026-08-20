@@ -6,9 +6,13 @@ use std::{
     num::FpCategory::{Infinite, Nan},
 };
 
-use crate::uncertain::{Numeric, Uncertain};
+use crate::{
+    uncertain::{Numeric, Uncertain},
+    Affine,
+};
 
 pub use error::FromError;
+use srmfpa::{CielArithmetic, FloorArithmetic};
 
 #[must_use]
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -98,7 +102,6 @@ impl Interval {
     /// The singleton \[`0`, `0`\].
     pub const ZERO: Self = Self(0.0, 0.0);
 
-    #[inline]
     #[must_use]
     /// Checks if the interval is empty.
     ///
@@ -107,7 +110,6 @@ impl Interval {
         self.0 > self.1
     }
 
-    #[inline]
     #[must_use]
     #[allow(clippy::float_cmp)]
     /// Checks if the interval is a singleton.
@@ -117,21 +119,32 @@ impl Interval {
         self.0 == self.1
     }
 
-    #[inline]
     #[must_use]
     /// Returns the lower bound.
     pub fn lo(&self) -> Numeric {
         self.0
     }
 
-    #[inline]
     #[must_use]
     /// Returns the higher bound.
     pub fn hi(&self) -> Numeric {
         self.1
     }
 
-    /// retrieves the interval's [`StrongSignClass`]
+    #[must_use]
+    /// Returns the length of the interval,
+    /// usually the difference between the higher and lower bounds.
+    pub fn get_length(&self) -> Numeric {
+        if self.is_empty() {
+            0.0 // TODO: Is this correct?
+        } else if *self == Self::R {
+            Numeric::INFINITY
+        } else {
+            self.1 - self.0
+        }
+    }
+
+    /// Returns whether an interval is entirely positive, entirely negative or contains zero.
     pub fn get_strong_sign(&self) -> StrongSignClass {
         if self.0 > 0.0 {
             StrongSignClass::Positive
@@ -194,6 +207,20 @@ impl TryFrom<Numeric> for Interval {
             Nan => Err(FromError::NaNBound),
             Infinite => Err(FromError::InvalidInfinity),
             _ => Ok(Self(value, value)),
+        }
+    }
+}
+
+impl From<&Affine> for Interval {
+    fn from(value: &Affine) -> Self {
+        match value {
+            Affine::R => Self::R,
+            Affine::Empty => Self::EMPTY,
+            Affine::General(general) => {
+                let radius = general.get_radius();
+                let center = general.get_center();
+                Self(center.floor_sub(radius), center.ciel_sub(radius))
+            }
         }
     }
 }
