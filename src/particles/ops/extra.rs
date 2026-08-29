@@ -20,15 +20,16 @@ impl ExtraOps for Particles {
 
     type RecipResult = Particles;
 
-    fn sqrt(mut self) -> Self::SqrtResult {
-        self.0.retain_mut(|e| {
+    fn sqrt(self) -> Self::SqrtResult {
+        let mut v = Vec::from(self.0);
+        v.retain_mut(|e| {
             if *e < 0.0 {
                 return false;
             }
             *e = e.sqrt();
             true
         });
-        self
+        v.into()
     }
 
     fn recip(mut self) -> Self::RecipResult {

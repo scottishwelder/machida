@@ -30,12 +30,12 @@ use crate::{
 /// [`from_interval`]: Self::from_interval
 /// [`From<Vec<Numeric>>`]: Self::from
 /// [`FromIterator<Numeric>`]: Self::from_iter
-pub struct Particles(Vec<Numeric>);
+pub struct Particles(Box<[Numeric]>);
 
 impl Particles {
     /// Creates an empty collection
     pub fn new_empty() -> Self {
-        Vec::new().into()
+        Box::<[f64]>::default().into()
     }
 
     /// Creates a new collection with `size` particles uniformly sampled from the interval.
@@ -47,16 +47,15 @@ impl Particles {
         if interval.is_empty() {
             return Self::new_empty();
         }
-        let mut v = Vec::with_capacity(size);
-        let mut rng = rng();
+        let rng = rng();
         let uni = Uniform::new_inclusive(interval.lo(), interval.hi()).unwrap();
-        (0..size).for_each(|_| v.push(uni.sample(&mut rng)));
+        let v: Vec<_> = uni.sample_iter(rng).take(size).collect();
         v.into()
     }
 
     /// Creates a new collection by mapping each element.
     pub fn map<F: FnMut(&Numeric) -> Numeric>(&self, f: F) -> Self {
-        self.0.iter().map(f).collect()
+        self.iter().map(f).collect()
     }
 
     /// Maps each element in place.
@@ -92,15 +91,21 @@ impl Particles {
 
 impl Uncertain for Particles {}
 
+impl From<Box<[Numeric]>> for Particles {
+    fn from(value: Box<[Numeric]>) -> Self {
+        Self(value)
+    }
+}
+
 impl From<Vec<Numeric>> for Particles {
     fn from(value: Vec<Numeric>) -> Self {
-        Self(value)
+        value.into_boxed_slice().into()
     }
 }
 
 impl FromIterator<Numeric> for Particles {
     fn from_iter<T: IntoIterator<Item = Numeric>>(iter: T) -> Self {
-        iter.into_iter().collect::<Vec<_>>().into()
+        Box::from_iter(iter).into()
     }
 }
 
@@ -111,9 +116,15 @@ impl Display for Particles {
 }
 
 impl Deref for Particles {
-    type Target = [f64];
+    type Target = [Numeric];
 
     fn deref(&self) -> &Self::Target {
         self.0.deref()
+    }
+}
+
+impl AsRef<[Numeric]> for Particles {
+    fn as_ref(&self) -> &[Numeric] {
+        self.0.as_ref()
     }
 }
