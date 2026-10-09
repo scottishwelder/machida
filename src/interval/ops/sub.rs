@@ -42,12 +42,13 @@ impl Sub<Numeric> for Interval {
 // Cannot forward to Sub<Numeric> for Interval because subtraction is not commutative.
 impl Sub<Interval> for Numeric {
     type Output = Interval;
+
     fn sub(self, rhs: Interval) -> Self::Output {
         assert!(self.is_finite(), "Subtracting interval from +∞, -∞ or NaN");
         if rhs.is_empty() {
             return Interval::EMPTY;
         }
-        Interval(self.floor_sub(rhs.0), self.ciel_sub(rhs.1))
+        Interval(self.floor_sub(rhs.1), self.ciel_sub(rhs.0))
     }
 }
 
